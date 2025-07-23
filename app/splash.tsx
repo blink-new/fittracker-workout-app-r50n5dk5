@@ -5,19 +5,21 @@ import { useApp } from '../context/AppContext';
 
 export default function SplashScreen() {
   const router = useRouter();
-  const { state } = useApp();
+  const { state, isLoading } = useApp();
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (state.user) {
-        router.replace('/programs');
-      } else {
-        router.replace('/auth');
-      }
-    }, 2000);
+    if (!isLoading) {
+      const timer = setTimeout(() => {
+        if (state.user) {
+          router.replace('/programs');
+        } else {
+          router.replace('/auth');
+        }
+      }, 1500); // Show splash for 1.5 seconds after loading
 
-    return () => clearTimeout(timer);
-  }, [state.user, router]);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, state.user, router]);
 
   return (
     <View style={styles.container}>
@@ -25,7 +27,10 @@ export default function SplashScreen() {
         <Text style={styles.logo}>💪</Text>
         <Text style={styles.title}>FitTracker</Text>
         <Text style={styles.subtitle}>Track Your Workout Journey</Text>
-        <ActivityIndicator size="large" color="#FF6B35" style={styles.loader} />
+        <ActivityIndicator size="large" color="white" style={styles.loader} />
+        {isLoading && (
+          <Text style={styles.loadingText}>Loading your data...</Text>
+        )}
       </View>
     </View>
   );
@@ -58,5 +63,10 @@ const styles = StyleSheet.create({
   },
   loader: {
     marginTop: 20,
+  },
+  loadingText: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginTop: 10,
+    fontSize: 14,
   },
 });

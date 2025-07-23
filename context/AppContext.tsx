@@ -9,6 +9,7 @@ interface AppContextType {
   logout: () => void;
   addSession: (session: WorkoutSession) => void;
   getLastSessionForExercise: (exerciseId: string) => WorkoutSession | null;
+  isLoading: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -17,9 +18,10 @@ type AppAction =
   | { type: 'SET_USER'; payload: User | null }
   | { type: 'SET_PROGRAMS'; payload: WorkoutProgram[] }
   | { type: 'SET_SESSIONS'; payload: WorkoutSession[] }
-  | { type: 'ADD_SESSION'; payload: WorkoutSession };
+  | { type: 'ADD_SESSION'; payload: WorkoutSession }
+  | { type: 'SET_LOADING'; payload: boolean };
 
-const appReducer = (state: AppState, action: AppAction): AppState => {
+const appReducer = (state: AppState & { isLoading: boolean }, action: AppAction): AppState & { isLoading: boolean } => {
   switch (action.type) {
     case 'SET_USER':
       return { ...state, user: action.payload };
@@ -29,15 +31,18 @@ const appReducer = (state: AppState, action: AppAction): AppState => {
       return { ...state, sessions: action.payload };
     case 'ADD_SESSION':
       return { ...state, sessions: [...state.sessions, action.payload] };
+    case 'SET_LOADING':
+      return { ...state, isLoading: action.payload };
     default:
       return state;
   }
 };
 
-const initialState: AppState = {
+const initialState: AppState & { isLoading: boolean } = {
   user: null,
   programs: [],
   sessions: [],
+  isLoading: true,
 };
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -49,6 +54,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const loadInitialData = async () => {
     try {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      
       // Load user
       const user = await StorageService.getUser();
       dispatch({ type: 'SET_USER', payload: user });
@@ -64,8 +71,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       // Load sessions
       const sessions = await StorageService.getSessions();
       dispatch({ type: 'SET_SESSIONS', payload: sessions });
+      
+      dispatch({ type: 'SET_LOADING', payload: false });
     } catch (error) {
       console.error('Error loading initial data:', error);
+      dispatch({ type: 'SET_LOADING', payload: false });
     }
   };
 
@@ -109,11 +119,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   return (
     <AppContext.Provider
       value={{
-        state,
+        state: {
+          user: state.user,
+          programs: state.programs,
+          sessions: state.sessions,
+        },
         login,
         logout,
         addSession,
         getLastSessionForExercise,
+        isLoading: state.isLoading,
       }}
     >
       {children}

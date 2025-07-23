@@ -1,11 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { User, WorkoutProgram, WorkoutSession, AppState } from '../types';
-import { v4 as uuidv4 } from 'uuid';
+import { User, WorkoutProgram, WorkoutSession } from '../types';
 
 const STORAGE_KEYS = {
   USER: '@workout_tracker_user',
   PROGRAMS: '@workout_tracker_programs',
   SESSIONS: '@workout_tracker_sessions',
+};
+
+// Simple ID generator
+const generateId = (): string => {
+  return Date.now().toString() + Math.random().toString(36).substr(2, 9);
 };
 
 export const StorageService = {
@@ -84,20 +88,8 @@ export const StorageService = {
     }
   },
 
-  // Get last session for specific exercise
-  async getLastSessionForExercise(exerciseId: string, userId: string): Promise<WorkoutSession | null> {
-    try {
-      const sessions = await this.getSessions();
-      const exerciseSessions = sessions
-        .filter(session => session.exerciseId === exerciseId && session.userId === userId)
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      
-      return exerciseSessions.length > 0 ? exerciseSessions[0] : null;
-    } catch (error) {
-      console.error('Error getting last session:', error);
-      return null;
-    }
-  },
+  // Generate ID
+  generateId,
 
   // Clear all data
   async clearAllData(): Promise<void> {
@@ -111,9 +103,4 @@ export const StorageService = {
       console.error('Error clearing data:', error);
     }
   },
-
-  // Generate UUID
-  generateId(): string {
-    return uuidv4();
-  }
 };
